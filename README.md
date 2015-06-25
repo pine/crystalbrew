@@ -1,5 +1,6 @@
 crystalbrew
+-----------
 
-[Crystal:http://crystal-lang.org/] version manager.
+[Crystal](http://crystal-lang.org/) version manager.
 
 
