@@ -14,8 +14,18 @@ Or, download and setup.
 
 ```
 $ wget j.mp/crystalbrew
-$ perl nodebrew setup
+$ perl crystalbrew setup
 ```
+
+Add PATH setting your shell config file (.bashrc or .zshrc).
+
+export PATH=$HOME/.crystalbrew/current/bin:$PATH
+Reload config.
+
+$ source ~/.bashrc
+Confirm.
+
+$ crystalbrew help
 
 ## Acknowledgement
 crystalbrew is based [nodebrew](https://github.com/hokaccha/nodebrew). Thank you.
