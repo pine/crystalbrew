@@ -63,4 +63,4 @@ Example:
 crystalbrew is based [nodebrew](https://github.com/hokaccha/nodebrew). Thank you.
 
 ## Author
-Pine Mizune <pinemz@gmail.com>
+Pine Mizune
