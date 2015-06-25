@@ -136,15 +136,15 @@ sub _cmd_list {
 sub _cmd_ls { _cmd_list(@_) }
 
 
-sub _cmd_ls_remote {
-    my ($self, $args) = @_;
-}
+# sub _cmd_ls_remote {
+#     my ($self, $args) = @_;
+# }
 
 sub _cmd_alias {
     my ($self, $args) = @_;
 
     my ($key, $val)  = $args ? @$args : ();
-    my $alias = Nodebrew::Config->new($self->{alias_file});
+    my $alias = Crystalbrew::Config->new($self->{alias_file});
 
     # set alias
     if ($key && $val) {
@@ -169,7 +169,7 @@ sub _cmd_alias {
 sub _cmd_unalias {
     my ($self, $args) = @_;
 
-    my $alias = Nodebrew::Config->new($self->{alias_file});
+    my $alias = Crystalbrew::Config->new($self->{alias_file});
     my $key = $args->[0];
     if (!$key) {
         return;
@@ -190,9 +190,9 @@ sub _cmd_setup {
     $self->_cmd_setup_dirs();
 
     my $crystalbrew_path = "$self->{brew_dir}/crystalbrew";
-    $self->fetch_nodebrew();
+    $self->fetch_crystalbrew();
     `chmod +x $crystalbrew_path`;
-    symlink $crystalbrew_path, "$self->{default_dir}/bin/nodebrew";
+    symlink $crystalbrew_path, "$self->{default_dir}/bin/crystalbrew";
     $self->use_default() if $self->get_current_version() eq 'none';
 
     my $brew_dir = $self->{brew_dir};
@@ -455,7 +455,7 @@ sub new {
         open my $fh, '<', $file or die "Error: $!";
         my $str = do { local $/; <$fh> };
         close $fh;
-        $data = Nodebrew::Config::_parse($str);
+        $data = Crystalbrew::Config::_parse($str);
     }
 
     bless { file => $file, data => $data }, $class;
@@ -498,7 +498,7 @@ sub save {
     my $self = shift;
 
     open my $fh, '>', $self->{file} or die "Error: $!";
-    print $fh Nodebrew::Config::_strigify($self->{data});
+    print $fh Crystalbrew::Config::_strigify($self->{data});
     close $fh;
 
     return 1;
