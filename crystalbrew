@@ -1,0 +1,727 @@
+#!/usr/bin/env perl
+
+# crystalbrew
+# Crystal version manager
+#
+# @author  Pine Mizune
+# @url     https://github.com/pine613/crystalbrew
+
+# crystalbrew is based nodebrew
+# Copyright (c) 2011 Kazuhito Hokamura <k.hokamura@gmail.com>
+# https://github.com/hokaccha/nodebrew
+
+use strict;
+use warnings;
+use utf8;
+use 5.10.2;
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew;
+
+use Data::Dumper;
+use File::Path qw/rmtree mkpath/;
+
+our $VERSION = '0.0.1';
+
+sub new {
+    my ($class, %opt) = @_;
+
+    my $self = +{ %opt };
+    bless $self => $class;
+
+    $self->init;
+    $self;
+}
+
+sub init {
+    my $self = shift;
+
+    $self->{src_dir} = $self->{brew_dir} . '/src';
+    $self->{crystal_dir} = $self->{brew_dir} . '/crystal';
+    $self->{current} = $self->{brew_dir} . '/current';
+    $self->{default_dir} = $self->{brew_dir} . '/default';
+    $self->{alias_file} = $self->{brew_dir} . '/alias';
+}
+
+sub run {
+    my ($self, $command, $args) = @_;
+
+    $command ||= '';
+    $command =~ s/-/_/g;
+
+    if (my $cmd = $self->can("_cmd_$command")) {
+        $cmd->($self, $args);
+    }
+    else {
+        $self->_cmd_help($args);
+    }
+}
+
+sub _cmd_use {
+    my ($self, $args) = @_;
+
+    my $version = $self->find_available_version($args->[0]);
+    my $target = $self->get_install_dir . "/$version";
+    my $crystalbrew_path = "$target/bin/crystalbrew";
+
+    unlink $self->{current} if -l $self->{current};
+    symlink $target, $self->{current};
+    # symlink "$self->{brew_dir}/crystalbrew", $crystalbrew_path unless -l $crystalbrew_path;
+
+    say "use $version";
+}
+
+sub _cmd_install {
+    my ($self, $args) = @_;
+
+    my $version           = $self->find_install_version($args->[0]);
+    my ($platform, $arch) = Crystalbrew::Utils::system_info();
+    my $type              = $self->get_type;
+    my $src_dir           = "$self->{src_dir}/$version";
+    my $target_name       = "$type-$version-$platform-$arch";
+    my $tarball_path      = "$src_dir/$target_name.tar.gz";
+
+    say "resolve: $target_name";
+    my $github  = Crystalbrew::GitHub->new(
+        fetcher => $self->{fetcher},
+        github_repo => $self->{github_repo},
+    );
+
+    my $releases      = $github->fetch_releases($version);
+    my $download_urls = $self->find_binary_download_urls($releases->{assets});
+    my $tarball_url   = $download_urls->{$platform};
+
+    $self->clean($version);
+    mkdir $src_dir;
+
+    say "fetch: $tarball_url";
+    $self->{fetcher}->download($tarball_url, $tarball_path)
+        or error_and_exit("download faild: $tarball_url");
+
+    Crystalbrew::Utils::extract_tar($tarball_path, $src_dir);
+
+    my ($target_dir) = glob("$src_dir/crystal-*/");
+    rename $target_dir, $self->get_install_dir . "/$version" or die "Error: $!";
+
+    print "Install successful\n";
+}
+
+sub _cmd_uninstall {
+    my ($self, $args) = @_;
+    my $version = $self->normalize_version($args->[0]);
+    my $target = $self->get_install_dir . "/$version";
+    my $current_version = $self->get_current_version();
+
+    error_and_exit("$version is not installed") unless -e $target;
+    rmtree $target;
+
+    if ($current_version eq $version) {
+        $self->use_default();
+    }
+
+    print "$version uninstalled\n";
+}
+
+sub _cmd_list {
+    my ($self, $args) = @_;
+
+    my @versions = @{ $self->get_local_version() };
+    print scalar @versions
+        ? join("\n", @{ Crystalbrew::Utils::sort_version(\@versions) })
+        : "not installed";
+    print "\n\ncurrent: " . $self->get_current_version() . "\n";
+}
+
+sub _cmd_ls { _cmd_list(@_) }
+
+
+sub _cmd_ls_remote {
+    my ($self, $args) = @_;
+}
+
+sub _cmd_alias {
+    my ($self, $args) = @_;
+
+    my ($key, $val)  = $args ? @$args : ();
+    my $alias = Nodebrew::Config->new($self->{alias_file});
+
+    # set alias
+    if ($key && $val) {
+        $alias->set($key, $val);
+        $alias->save();
+        print "$key -> $val\n";
+    }
+    # get alias
+    elsif ($key) {
+        $val = $alias->get($key);
+        print $val ? "$key -> $val\n" : "$key is not set alias\n";
+    }
+    # get alias all
+    else {
+        my $datas = $alias->get_all();
+        for (keys %{$datas}) {
+            print $_ . ' -> ' . $datas->{$_} . "\n";
+        }
+    }
+}
+
+sub _cmd_unalias {
+    my ($self, $args) = @_;
+
+    my $alias = Nodebrew::Config->new($self->{alias_file});
+    my $key = $args->[0];
+    if (!$key) {
+        return;
+    }
+
+    if ($alias->del($key)) {
+        $alias->save();
+        print "remove $key\n";
+    }
+    else {
+        error_and_exit("$key is not defined");
+    }
+}
+
+sub _cmd_setup {
+    my ($self, $args) = @_;
+
+    $self->_cmd_setup_dirs();
+
+    my $crystalbrew_path = "$self->{brew_dir}/crystalbrew";
+    $self->fetch_nodebrew();
+    `chmod +x $crystalbrew_path`;
+    symlink $crystalbrew_path, "$self->{default_dir}/bin/nodebrew";
+    $self->use_default() if $self->get_current_version() eq 'none';
+
+    my $brew_dir = $self->{brew_dir};
+    $brew_dir =~ s/$ENV{'HOME'}/\$HOME/;
+    print "install crystalbrew in $brew_dir\n\n";
+    print "========================================\n";
+    print "Add path:\n\n";
+    print "export PATH=$brew_dir/current/bin:\$PATH\n";
+    print "========================================\n";
+}
+
+sub _cmd_setup_dirs {
+    my $self = shift;
+
+    mkdir $self->{brew_dir}          unless -e $self->{brew_dir};
+    mkdir $self->{src_dir}           unless -e $self->{src_dir};
+    mkdir $self->{crystal_dir}       unless -e $self->{crystal_dir};
+    mkdir $self->{default_dir}       unless -e $self->{default_dir};
+    mkdir "$self->{default_dir}/bin" unless -e "$self->{default_dir}/bin";
+}
+
+sub _cmd_clean {
+    my ($self, $args) = @_;
+
+    my $version = $self->normalize_version($args->[0]);
+
+    $self->clean($version);
+    print "clean $version\n";
+}
+
+sub _cmd_selfupdate {
+    my ($self, $args) = @_;
+
+    $self->fetch_crystalbrew()
+        or error_and_exit("Update faild");
+
+    say 'Update successful';
+}
+
+sub _cmd_exec {
+    my ($self, $args) = @_;
+
+    my $version = $self->find_available_version(shift @$args);
+
+    $ENV{PATH} = $self->get_install_dir . "/$version/bin:$ENV{PATH}";
+
+    shift @$args if $args->[0] eq '--';
+    my $command = join ' ', @$args;
+
+    system $command;
+}
+
+sub _cmd_help {
+    my ($self, $args) = @_;
+
+    say <<"...";
+crystalbrew $VERSION
+
+Usage:
+    crystalbrew help                         Show this message
+    crystalbrew install <version>            Download and install a <version> (binary file)
+    crystalbrew uninstall <version>          Uninstall a version
+    crystalbrew use <version>                Use <version>
+    crystalbrew list                         List installed versions
+    crystalbrew ls                           Alias for `list`
+    crystalbrew alias <key> <version>        Set alias to version
+    crystalbrew unalias <key>                Remove alias
+    crystalbrew clean <version> | all        Remove source file
+    crystalbrew exec <version> -- <command>  Execute <command> specified <version>
+
+Example:
+    # install from binary
+    crystalbrew install-binary v0.7.4
+...
+}
+
+sub find_binary_download_urls {
+    my ($self, $assets) = @_;
+
+    my ($linux)  = grep { $_->{name} =~ /linux/  } @$assets;
+    my ($darwin) = grep { $_->{name} =~ /darwin/ } @$assets;
+
+    +{
+        linux  => $linux->{browser_download_url},
+        darwin => $darwin->{browser_download_url},
+    };
+}
+
+sub find_install_version {
+    my ($self, $v) = @_;
+
+    my $version = $self->normalize_version($v);
+
+    # if ($version !~ m/v\d+\.\d+\.\d+/) {
+    #     $version = Crystalbrew::Utils::find_version(
+    #         $version, $self->get_remote_version()
+    #     );
+    # }
+
+    error_and_exit('version not found') unless $version;
+    error_and_exit("$version is already installed")
+        if -e $self->get_install_dir . "/$version";
+
+    return $version;
+}
+
+sub find_available_version {
+    my ($self, $arg) = @_;
+
+    my $alias = Crystalbrew::Config->new($self->{alias_file});
+    my $target_version = $self->normalize_version($alias->get($arg) || $arg);
+    my $local_version = $self->get_local_version();
+    my $version = Crystalbrew::Utils::find_version($target_version, $local_version)
+        or error_and_exit("$target_version is not installed");
+
+    return $version;
+}
+
+sub get_local_version {
+    my ($self, $type) = @_;
+
+    my @versions;
+    opendir my $dh, $self->get_install_dir($type) or die $!;
+    while (my $dir = readdir $dh) {
+        push @versions, $dir unless $dir =~ '^\.\.?$';
+    }
+
+    return \@versions;
+}
+
+sub use_default {
+    my $self = shift;
+
+    unlink $self->{current} if -l $self->{current};
+    symlink $self->{default_dir}, $self->{current};
+}
+
+sub get_current_version {
+    my $self = shift;
+
+    return 'none' unless -l $self->{current};
+    my $current_version = readlink $self->{current};
+
+    return $1 if $current_version =~ m!^$self->{crystal_dir}/(.+)!;
+    return 'none';
+}
+
+sub fetch_crystalbrew {
+    my $self = shift;
+
+    print "fetching crystalbrew...\n";
+
+    if ($self->{fetcher}->fetch_able($self->{crystalbrew_url})) {
+        my $crystalbrew_source = $self->{fetcher}->fetch($self->{crystalbrew_url});
+        my $crystalbrew_path = "$self->{brew_dir}/crystalbrew";
+
+        $self->make_file($crystalbrew_source, $crystalbrew_path);
+
+        1;
+    }
+}
+
+sub make_file {
+    my ($self, $content, $dest) = @_;
+    open my $fh, '>', $dest or die "Error: $!";
+    print $fh $content;
+}
+
+sub error_and_exit {
+    my $msg = shift;
+
+    say $msg;
+    exit 1;
+}
+
+sub normalize_version {
+    my ($self, $v) = @_;
+
+    error_and_exit('version is required') unless $v;
+
+    return $v =~ m/^\d+\.?(\d+|x)?\.?(\d+|x)?$/ ? "v$v" : $v;
+}
+
+sub get_install_dir {
+    my $self = shift;
+
+    my $dir = $self->{crystal_dir};
+    mkdir $dir unless -e $dir;
+
+    return $dir;
+}
+
+sub clean {
+    my ($self, $version) = @_;
+
+    if ($version eq 'all') {
+        opendir my $dh, $self->{src_dir} or return;
+        while (my $file = readdir $dh) {
+            next if $file =~ m/^\./;
+            my $path = "$self->{src_dir}/$file";
+            unlink $path if -f $path;
+            rmtree $path if -d $path;
+        }
+    }
+    elsif (-d "$self->{src_dir}/$version") {
+        rmtree "$self->{src_dir}/$version";
+    }
+}
+
+sub get_type { 'crystal' }
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew::GitHub;
+
+use JSON qw/decode_json/;
+use Data::Dumper;
+
+sub new {
+    my ($class, %opt) = @_;
+
+    my $self = +{ %opt };
+    bless $self => $class;
+}
+
+sub fetch {
+    my ($self, $url) = @_;
+    $self->{fetcher}->fetch_from_github($url);
+}
+
+sub base_url {
+    my $self = shift;
+    'https://api.github.com/repos/' . $self->{github_repo} . '/';
+}
+
+sub fetch_as_json {
+    my ($self, $path) = @_;
+
+    my $url      = $self->base_url . $path;
+    my $content  = $self->fetch($url);
+    decode_json($content);
+}
+
+sub fetch_releases {
+    my ($self, $version) = @_;
+    $version =~ s/v//g;
+    $self->fetch_as_json('releases/tags/' . $version);
+}
+
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew::Config;
+
+sub new {
+    my ($class, $file) = @_;
+
+    my $data = {};
+    if (-e $file) {
+        open my $fh, '<', $file or die "Error: $!";
+        my $str = do { local $/; <$fh> };
+        close $fh;
+        $data = Nodebrew::Config::_parse($str);
+    }
+
+    bless { file => $file, data => $data }, $class;
+}
+
+sub get_all {
+    my $self = shift;
+
+    return $self->{data};
+}
+
+sub get {
+    my ($self, $key) = @_;
+
+    return $self->{data}->{$key};
+}
+
+sub set {
+    my ($self, $key, $val) = @_;
+
+    if ($key && $val) {
+        $self->{data}->{$key} = $val;
+        return 1;
+    }
+
+    return;
+}
+
+sub del {
+    my ($self, $key) = @_;
+
+    if ($key && $self->get($key)) {
+        delete $self->{data}->{$key};
+        return 1;
+    }
+    return;
+}
+
+sub save {
+    my $self = shift;
+
+    open my $fh, '>', $self->{file} or die "Error: $!";
+    print $fh Nodebrew::Config::_strigify($self->{data});
+    close $fh;
+
+    return 1;
+}
+
+sub _parse {
+    my $str = shift;
+
+    my %ret;
+    for (split /\n/, $str) {
+        my ($key, $val) = ($_ =~ m/^\s*(.*?)\s*=\s*(.*?)\s*$/);
+        $ret{$key} = $val if $key;
+    }
+    return \%ret;
+}
+
+sub _strigify {
+    my $datas = shift;
+
+    my $ret = '';
+    for (keys %$datas) {
+        $ret .= $_ . ' = ' . $datas->{$_} . "\n";
+    }
+
+    return $ret;
+}
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew::Fetcher;
+
+sub get {
+    my ($class, $type) = @_;
+
+    $type eq 'wget' ? Crystalbrew::Fetcher::Wget->new:
+    $type eq 'curl' ? Crystalbrew::Fetcher::Curl->new:
+    die 'Fetcher type invalid';
+}
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew::Fetcher::Curl;
+
+sub new { bless {}; }
+
+sub fetch_able {
+    my ($self, $url) = @_;
+
+    `curl -LIs "$url"` =~ m/200 OK/;
+}
+
+sub fetch {
+    my ($self, $url) = @_;
+
+    `curl -Ls $url`;
+}
+
+sub fetch_from_github {
+    my ($self, $url) = @_;
+
+    `curl -H 'Accept: application/vnd.github.v3+json' -Ls $url`;
+}
+
+sub download {
+    my ($self, $url, $path) = @_;
+
+    system("curl -L $url -o $path") == 0;
+}
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew::Fetcher::Wget;
+
+sub new { bless {}; }
+
+sub fetch_able {
+    my ($self, $url) = @_;
+
+    `wget -Sq --spider "$url" 2>&1` =~ m/200 OK/;
+}
+
+sub fetch {
+    my ($self, $url) = @_;
+
+    `wget -q $url -O -`;
+}
+
+sub fetch_from_github {
+    my ($self, $url) = @_;
+
+    `wget -q $url --header='Accept: application/vnd.github.v3+json' -O -`;
+}
+
+sub download {
+    my ($self, $url, $path) = @_;
+
+    system("wget -c $url -O $path") == 0;
+}
+
+# -----------------------------------------------------------------------------
+
+package Crystalbrew::Utils;
+
+use POSIX;
+use Cwd 'getcwd';
+
+
+sub sort_version {
+    my $version = shift;
+
+    return [sort {
+        my ($a1, $a2, $a3) = ($a =~ m/v(\d+)\.(\d+)\.(\d+)/);
+        my ($b1, $b2, $b3) = ($b =~ m/v(\d+)\.(\d+)\.(\d+)/);
+        $a1 <=> $b1 || $a2 <=> $b2 || $a3 <=> $b3
+    } @$version];
+}
+
+sub find_version {
+    my ($version, $versions) = @_;
+
+    $versions = Crystalbrew::Utils::sort_version($versions);
+    my @versions = @$versions;
+
+    return undef unless scalar @versions;
+    return pop @versions if $version eq 'latest';
+
+    if ($version eq 'stable') {
+        for (reverse @versions) {
+            my ($miner) = m/^v\d+\.(\d+)/;
+            return $_ if $miner % 2 == 0;
+        }
+        return;
+    }
+
+    my @v = map {
+        $_ && $_ eq 'x' ? undef : $_
+    } $version =~ m/^v(\d+)\.?(\d+|x)?\.?(\d+|x)?$/;
+
+    my @ret;
+    if (defined($v[0]) && defined($v[1]) && defined($v[2])) {
+        @ret = grep { /^v?$v[0]\.$v[1]\.$v[2]$/ } @versions;
+    }
+    elsif (defined($v[0]) && defined($v[1]) && !defined($v[2])) {
+        @ret = grep { /^v?$v[0]\.$v[1]\./ } @versions;
+    }
+    elsif (defined($v[0]) && !defined($v[1])) {
+        @ret = grep { /^v?$v[0]\./ } @versions;
+    }
+
+    pop @ret;
+}
+
+sub parse_args {
+    my $command = shift;
+    return ($command, \@_);
+}
+
+sub system_info {
+    my $arch;
+    my ($sysname, $machine) = (POSIX::uname)[0, 4];
+
+    if  ($machine =~ m/x86_64/) {
+        $arch = 'x64';
+    } elsif ($machine =~ m/i\d86/) {
+        $arch = 'x86';
+    } elsif ($machine =~ m/armv6l/) {
+        $arch = 'arm-pi';
+    } elsif ($sysname =~ m/sunos/i) {
+        # SunOS $machine => 'i86pc'. but use 64bit kernel.
+        # Solaris 11 not support 32bit kernel.
+        # both 32bit and 64bit node-binary even work on 64bit kernel
+        $arch = 'x64';
+    } else {
+        die "Error: $sysname $machine is not supported."
+    }
+
+    return (lc $sysname, $arch);
+}
+
+sub extract_tar {
+    my ($filepath, $outdir) = @_;
+
+    my $cwd = getcwd;
+
+    chdir($outdir);
+
+    eval {
+        require Archive::Tar;
+        my $tar = Archive::Tar->new;
+        $tar->read($filepath);
+        $tar->extract;
+    };
+    if ($@) {
+        `tar zfx $filepath`;
+    }
+
+    chdir($cwd);
+}
+
+# -----------------------------------------------------------------------------
+
+package main;
+
+use Cwd qw/abs_path/;
+
+sub main {
+    my $brew_dir        = abs_path($ENV{'NODEBREW_ROOT'} || $ENV{'HOME'} . '/.crystalbrew');
+    my $base_url        = 'https://raw.githubusercontent.com/pine613/crystalbrew/master/';
+    my $crystalbrew_url = "${base_url}crystalbrew";
+    my $fetcher_type    = `which curl` ? 'curl' :
+                          `which wget` ? 'wget' :
+                          die 'Need curl or wget';
+
+    my ($command, $args) = Crystalbrew::Utils::parse_args(@ARGV);
+
+    Crystalbrew->new(
+        brew_dir        => $brew_dir,
+        crystalbrew_url => $crystalbrew_url,
+        github_repo     => 'manastech/crystal',
+        fetcher         => Crystalbrew::Fetcher->get($fetcher_type),
+    )->run($command, $args);
+}
+
+main unless caller;
+
+# vim: se et ts=4 sw=4 sts=4 ft=perl :
