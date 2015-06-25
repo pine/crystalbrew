@@ -67,7 +67,7 @@ sub _cmd_use {
 
     unlink $self->{current} if -l $self->{current};
     symlink $target, $self->{current};
-    # symlink "$self->{brew_dir}/crystalbrew", $crystalbrew_path unless -l $crystalbrew_path;
+    symlink "$self->{brew_dir}/crystalbrew", $crystalbrew_path unless -l $crystalbrew_path;
 
     say "use $version";
 }
