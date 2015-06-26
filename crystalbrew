@@ -152,7 +152,16 @@ sub _cmd_ls_remote {
         print ++$i % 8 == 0 ? "\n" : ' ' x (10 - length $_);
     }
 
-    print "\n";
+    say '';
+}
+
+sub _cmd_ls_all {
+    my ($self, $args) = @_;
+
+    say 'remote:';
+    $self->_cmd_ls_remote($args);
+    say "\nlocal:";
+    $self->_cmd_ls($args);
 }
 
 sub _cmd_alias {
