@@ -1,9 +1,8 @@
 language: perl
 sudo: false
 
-before_install:
-  - cpanm Carton
-  - carton install
+test:
+  - prove
 
 perl:
   - "5.22"
