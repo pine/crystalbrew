@@ -1,15 +1,16 @@
 language: perl
 sudo: false
 
-test:
-  - prove
-
 perl:
   - "5.22"
   - "5.20"
   - "5.18"
   - "5.16"
   - "5.14"
+
+script:
+  - prove
+
 
 notifications:
   slack:
