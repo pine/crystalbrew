@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use utf8;
 
-use File::Basename;
 use Cwd qw/abs_path/;
 
 use t::Util;

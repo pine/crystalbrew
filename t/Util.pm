@@ -12,8 +12,16 @@ use Test::Deep;
 use Test::Deep::Matcher;
 use Test::Exception;
 
+sub create_crystalbrew {
+    my (%opt) = @_;
+    $opt{brew_dir} ||= 't/tmp/.crystalbrew';
+
+    Crystalbrew->new(%opt);
+}
 
 our @EXPORT = (
+    qw/create_crystalbrew/,
+
     @Data::Dumper::EXPORT,
 
     @Test::More::EXPORT,
