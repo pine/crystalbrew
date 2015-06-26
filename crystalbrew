@@ -100,10 +100,10 @@ sub _cmd_install {
 
     Crystalbrew::Utils::extract_tar($tarball_path, $src_dir);
 
-    my ($target_dir) = glob("$src_dir/crystal-*/");
+    my ($target_dir) = glob "$src_dir/crystal-*/";
     rename $target_dir, $self->get_install_dir . "/$version" or die "Error: $!";
 
-    print "Install successful\n";
+    say 'Install successful';
 }
 
 sub _cmd_uninstall {
@@ -119,7 +119,7 @@ sub _cmd_uninstall {
         $self->use_default();
     }
 
-    print "$version uninstalled\n";
+    print '$version uninstalled';
 }
 
 sub _cmd_list {
