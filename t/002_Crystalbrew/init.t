@@ -10,6 +10,7 @@ BEGIN { require 'crystalbrew' }
 subtest basic => sub {
     my $self = create_crystalbrew;
 
+    setup_dirs;
     is abs_path($self->{src_dir}), abs_path('t/tmp/.crystalbrew/src');
     is abs_path($self->{crystal_dir}), abs_path('t/tmp/.crystalbrew/crystal');
     is abs_path($self->{current}), abs_path('t/tmp/.crystalbrew/current');
