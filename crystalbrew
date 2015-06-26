@@ -82,12 +82,7 @@ sub _cmd_install {
     my $tarball_path      = "$src_dir/$target_name.tar.gz";
 
     say "resolve: $target_name";
-    my $github  = Crystalbrew::GitHub->new(
-        fetcher => $self->{fetcher},
-        github_repo => $self->{github_repo},
-    );
-
-    my $release       = $github->fetch_release($version);
+    my $release       = $self->github->fetch_release($version);
     my $download_urls = $self->find_binary_download_urls($release->{assets});
     my $tarball_url   = $download_urls->{$platform};
 
@@ -126,6 +121,7 @@ sub _cmd_list {
     my ($self, $args) = @_;
 
     my @versions = @{ $self->get_local_version() };
+
     print scalar @versions
         ? join("\n", @{ Crystalbrew::Utils::sort_version(\@versions) })
         : "not installed";
@@ -135,9 +131,29 @@ sub _cmd_list {
 sub _cmd_ls { _cmd_list(@_) }
 
 
-# sub _cmd_ls_remote {
-#     my ($self, $args) = @_;
-# }
+sub _cmd_ls_remote {
+    my ($self, $args) = @_;
+
+    my $releases  = $self->github->fetch_releases;
+    my @tag_names = map { $_->{tag_name} } @$releases;
+    my @versions  = map { $self->normalize_version($_) } @tag_names;
+
+    my $i = 0;
+    my %tmp;
+
+    for (@versions) {
+        my ($v1, $v2, $v3) = $_ =~ m/v(\d+)\.(\d+)\.(\d+)/;
+        if (!$tmp{"$v1.$v2"}++) {
+            print "\n\n" if $i;
+            $i = 0;
+        }
+
+        print $_;
+        print ++$i % 8 == 0 ? "\n" : ' ' x (10 - length $_);
+    }
+
+    print "\n";
+}
 
 sub _cmd_alias {
     my ($self, $args) = @_;
@@ -266,6 +282,15 @@ Example:
     # install from binary
     crystalbrew install-binary v0.7.4
 ...
+}
+
+sub github {
+    my $self = shift;
+
+    Crystalbrew::GitHub->new(
+        fetcher     => $self->{fetcher},
+        github_repo => $self->{github_repo},
+    );
 }
 
 sub find_binary_download_urls {
@@ -447,6 +472,10 @@ sub fetch_release {
     $self->fetch_as_json('releases/tags/' . $version);
 }
 
+sub fetch_releases {
+    my ($self) = @_;
+    $self->fetch_as_json('releases?per_page=100');
+}
 
 # -----------------------------------------------------------------------------
 
