@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use utf8;
 
-use Cwd qw/abs_path/;
 use File::Touch;
 use File::Path qw/rmtree mkpath/;
 use Capture::Tiny qw/capture/;
