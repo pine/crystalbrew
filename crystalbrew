@@ -87,8 +87,8 @@ sub _cmd_install {
         github_repo => $self->{github_repo},
     );
 
-    my $releases      = $github->fetch_releases($version);
-    my $download_urls = $self->find_binary_download_urls($releases->{assets});
+    my $release       = $github->fetch_release($version);
+    my $download_urls = $self->find_binary_download_urls($release->{assets});
     my $tarball_url   = $download_urls->{$platform};
 
     $self->clean($version);
@@ -441,7 +441,7 @@ sub fetch_as_json {
     decode_json($content);
 }
 
-sub fetch_releases {
+sub fetch_release {
     my ($self, $version) = @_;
     $version =~ s/v//g;
     $self->fetch_as_json('releases/tags/' . $version);
