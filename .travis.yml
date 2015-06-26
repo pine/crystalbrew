@@ -8,7 +8,7 @@ perl:
   - "5.14"
 
 script:
-  - prove
+  - prove -r
 
 
 notifications:

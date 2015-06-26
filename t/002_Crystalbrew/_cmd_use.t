@@ -18,7 +18,6 @@ sub setup {
     touch 't/tmp/.crystalbrew/crystalbrew';
 }
 
-
 subtest basic => sub {
     no warnings 'redefine';
     local *Crystalbrew::find_available_version = sub { $_[1] };
@@ -28,17 +27,17 @@ subtest basic => sub {
 
     my ($stdout, $stderr) = capture {
         $self->_cmd_use(['v0.7.4']);
-
-        ok -l 't/tmp/.crystalbrew/current';
-
-        is
-            abs_path(readlink('t/tmp/.crystalbrew/current')),
-            abs_path('t/tmp/.crystalbrew/crystal/v0.7.4');
-
-        is
-            abs_path(readlink('t/tmp/.crystalbrew/crystal/v0.7.4/bin/crystalbrew')),
-            abs_path('t/tmp/.crystalbrew/crystalbrew');
     };
+
+    ok -l 't/tmp/.crystalbrew/current';
+
+    is
+        abs_path(readlink('t/tmp/.crystalbrew/current')),
+        abs_path('t/tmp/.crystalbrew/crystal/v0.7.4');
+
+    is
+        abs_path(readlink('t/tmp/.crystalbrew/crystal/v0.7.4/bin/crystalbrew')),
+        abs_path('t/tmp/.crystalbrew/crystalbrew');
 
     ok $stdout, 'v0.7.4';
 };
