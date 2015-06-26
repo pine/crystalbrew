@@ -13,13 +13,12 @@
 use strict;
 use warnings;
 use utf8;
-use 5.10.2;
+use feature qw/say/;
 
 # -----------------------------------------------------------------------------
 
 package Crystalbrew;
 
-use Data::Dumper;
 use File::Path qw/rmtree mkpath/;
 
 our $VERSION = '0.0.1';
@@ -408,8 +407,14 @@ sub get_type { 'crystal' }
 
 package Crystalbrew::GitHub;
 
-use JSON qw/decode_json/;
-use Data::Dumper;
+BEGIN {
+    eval {
+        require JSON::PP;
+        JSON::PP->import;
+    };
+
+    say 'Can\'t load JSON::PP module. Please check Perl version.' if $@;
+}
 
 sub new {
     my ($class, %opt) = @_;
