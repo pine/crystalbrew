@@ -114,7 +114,7 @@ sub _cmd_uninstall {
         $self->use_default();
     }
 
-    print '$version uninstalled';
+    say "$version uninstalled";
 }
 
 sub _cmd_list {
