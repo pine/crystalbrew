@@ -710,7 +710,7 @@ package main;
 use Cwd qw/abs_path/;
 
 sub main {
-    my $brew_dir        = abs_path($ENV{'NODEBREW_ROOT'} || $ENV{'HOME'} . '/.crystalbrew');
+    my $brew_dir        = abs_path($ENV{'CRYSTALBREW_ROOT'} || $ENV{'HOME'} . '/.crystalbrew');
     my $base_url        = 'https://raw.githubusercontent.com/pine613/crystalbrew/master/';
     my $crystalbrew_url = "${base_url}crystalbrew";
     my $fetcher_type    = `which curl` ? 'curl' :
