@@ -56,6 +56,10 @@ subtest basic => sub {
     };
 
     ok -d 't/tmp/.crystalbrew/crystal/v0.7.4/bin';
+
+    ok $stdout =~ /fetch/;
+    ok $stdout =~ /resolve/;
+    ok $stdout =~ /v0\.7\.4/;
     ok $stdout =~ /Install successful/;
 };
 
