@@ -1,0 +1,17 @@
+language: perl
+before_install:
+  - cpanm Carton
+  - carton install
+
+perl:
+  - "5.16"
+  - "5.14"
+  - "5.12"
+  - "5.10"
+
+notifications:
+  slack:
+    secure: "JuCCOZnpisbqx2O/COCDS7ycUBd+Ywb+SursT1oLMAsAPkGBqZW79hFqd0tbjicrvYffyE73ZCTYBVatO1L4EENjvUCKMtedJqL84aat1YoIGyyvIYTkhmSEAarC5Y/xV01UkRX7dA8D/ZKUIm+8JlsFto1atjQ8pA8dxe4A5U3SUMJkxfxiRjLgCzGlPWtShIK84RLwapYQBKVW4MbL0iNMzq4am3E1bi8FU//pHhh2Lw+ygw4FtEpAKJnzMAP/bT+MkWknyyEshNiLb3hvYmvBpXGg/wkCTOTm2YP59vYbj+uxzQijj3hkOp9ygTID5MRKG+zwkIWBSPV3a/Bs/i6h9WERjc8nwhCZIloAy3SeX5ZLJJ1Qzm4fz0dpRHGs5arHH1DHMbxdawkGrUVirL0VRcO/+/9QgRnWUMtENBFjOo/nMWeYs1z7IuYX6u8hAlDTp8Ir9No2g7XgiqQ/YQksRd43/Q2804tug7sM3Tm59gfLmfSa/urF3A53eNn3jrvN6IvdhMJXSaSN0DHjoqAl6MOK8i7Y7XcKsoS/pWpHLS/jHl9Lw3H+89TY65+0jauY4VaH8YFCDJErIsoDjKtGJmOJ8jvSAY+8+bC0elpW4NhrnIyCa3bF8Gl2sh5NuzcpyTz8UaONX+lcdl8p3VNrcd/Ml0Q1QWRNJbJSlz4="
+
+
+# script: 'carton exec -- prove -lvr'
