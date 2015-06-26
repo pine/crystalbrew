@@ -60,6 +60,8 @@ Example:
 ```
 
 ## Acknowledgement
+
+- [hokaccha](https://github.com/hokaccha)<br />
 crystalbrew is based [nodebrew](https://github.com/hokaccha/nodebrew). Thank you.
 
 ## Author
