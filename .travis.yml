@@ -1,4 +1,6 @@
 language: perl
+sudo: false
+
 before_install:
   - cpanm Carton
   - carton install
