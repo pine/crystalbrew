@@ -4,6 +4,4 @@
 .carton
 local/
 
-cpanfile.snapshot
-
 t/tmp
