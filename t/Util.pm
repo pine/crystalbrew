@@ -15,7 +15,9 @@ use Test::Exception;
 
 sub create_crystalbrew {
     my (%opt) = @_;
-    $opt{brew_dir} ||= 't/tmp/.crystalbrew';
+    $opt{fetcher}     ||= Crystalbrew::Fetcher::Wget->new;
+    $opt{github_repo} ||= 'author/repo';
+    $opt{brew_dir}    ||= 't/tmp/.crystalbrew';
 
     Crystalbrew->new(%opt);
 }

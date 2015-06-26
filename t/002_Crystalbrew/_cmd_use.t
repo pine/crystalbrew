@@ -11,15 +11,20 @@ use t::Util;
 BEGIN { require 'crystalbrew' }
 
 
+sub setup {
+    setup_dirs;
+    symlink 't/Util.pm', 't/tmp/.crystalbrew/current';
+    mkpath 't/tmp/.crystalbrew/crystal/v0.7.4/bin';
+    touch 't/tmp/.crystalbrew/crystalbrew';
+}
+
+
 subtest basic => sub {
     no warnings 'redefine';
     local *Crystalbrew::find_available_version = sub { $_[1] };
 
-    setup_dirs;
+    setup;
     my $self = create_crystalbrew;
-    symlink 't/Util.pm', 't/tmp/.crystalbrew/current';
-    mkpath 't/tmp/.crystalbrew/crystal/v0.7.4/bin';
-    touch 't/tmp/.crystalbrew/crystalbrew';
 
     my ($stdout, $stderr) = capture {
         $self->_cmd_use(['v0.7.4']);
@@ -35,7 +40,6 @@ subtest basic => sub {
             abs_path('t/tmp/.crystalbrew/crystalbrew');
     };
 
-    warn $stdout;
     ok $stdout, 'v0.7.4';
 };
 
