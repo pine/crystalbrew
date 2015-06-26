@@ -5,8 +5,8 @@ use warnings;
 use utf8;
 
 use Exporter 'import';
-use File::Path qw/rmtree mkpath/;
 use Data::Dumper;
+
 
 use Test::More;
 use Test::Deep;
@@ -21,8 +21,11 @@ sub create_crystalbrew {
 }
 
 sub setup_dirs {
-    rmtree 't/tmp/.crystalbrew';
-    mkpath 't/tmp/.crystalbrew';
+    require File::Path;
+    import File::Path qw/rmtree mkpath/;
+
+    rmtree('t/tmp/.crystalbrew');
+    mkpath('t/tmp/.crystalbrew');
 }
 
 our @EXPORT = (
