@@ -9,7 +9,7 @@ perl:
   - "5.14"
 
 script:
-  - carton exec -- prove
+  - prove
 
 
 notifications:
