@@ -713,9 +713,6 @@ sub main {
     my $brew_dir        = abs_path($ENV{'CRYSTALBREW_ROOT'} || $ENV{'HOME'} . '/.crystalbrew');
     my $base_url        = 'https://raw.githubusercontent.com/pine613/crystalbrew/master/';
     my $crystalbrew_url = "${base_url}crystalbrew";
-    my $fetcher_type    = `which curl` ? 'curl' :
-                          `which wget` ? 'wget' :
-                          die 'Need curl or wget';
 
     my ($command, $args) = Crystalbrew::Utils::parse_args(@ARGV);
 
@@ -723,8 +720,14 @@ sub main {
         brew_dir        => $brew_dir,
         crystalbrew_url => $crystalbrew_url,
         github_repo     => 'manastech/crystal',
-        fetcher         => Crystalbrew::Fetcher->get($fetcher_type),
+        fetcher         => Crystalbrew::Fetcher->get(fetcher_type()),
     )->run($command, $args);
+}
+
+sub fetcher_type {
+    `which curl` ? 'curl' :
+    `which wget` ? 'wget' :
+        die 'Need curl or wget';
 }
 
 main unless caller;
