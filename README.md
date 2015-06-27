@@ -59,6 +59,22 @@ Example:
     crystalbrew install-binary v0.7.4
 ```
 
+## Development
+
+Install module for testing.
+
+```
+$ carton install
+```
+
+Run test.
+
+```
+$ carton exec -- prove -lvr
+```
+
+If you installed [direnv](https://github.com/zimbatm/direnv), you could run `prove` without prefix.
+
 ## Acknowledgement
 
 - [hokaccha](https://github.com/hokaccha)<br />
