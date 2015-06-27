@@ -2,6 +2,7 @@ on test => sub {
     requires 'Data::Dumper';
     requires 'Capture::Tiny', '0.30';
     requires 'File::Touch', '0.08';
+    requires 'File::Path', '2.09';
 
     requires 'Test::More', '1.001014';
     requires 'Test::Deep', '0.117';
