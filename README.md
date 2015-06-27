@@ -1,7 +1,10 @@
 crystalbrew
 -----------
 
+[![Build Status](https://travis-ci.org/pine613/crystalbrew.svg?branch=master)](https://travis-ci.org/pine613/crystalbrew)
+
 [Crystal](http://crystal-lang.org/) version manager.
+
 
 ## Install
 One liner curl install.
