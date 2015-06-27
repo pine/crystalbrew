@@ -15,6 +15,13 @@ DISTRIBUTIONS
       perl 5.006
       strict 0
       warnings 0
+  Data-Dumper-2.154
+    pathname: S/SM/SMUELLER/Data-Dumper-2.154.tar.gz
+    provides:
+      Data::Dumper 2.154
+    requirements:
+      ExtUtils::MakeMaker 0
+      Test::More 0.98
   Data-Util-0.63
     pathname: G/GF/GFUJI/Data-Util-0.63.tar.gz
     provides:

@@ -1,5 +1,6 @@
 on test => sub {
-    requires 'Data::Dumper';
+    requires 'Data::Dumper', '2.154';
+
     requires 'Capture::Tiny', '0.30';
     requires 'File::Touch', '0.08';
     requires 'File::Path', '2.09';
