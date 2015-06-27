@@ -9,14 +9,14 @@ BEGIN { require 'crystalbrew' }
 
 
 subtest basic => sub {
+    setup_dirs;
     my $self = create_crystalbrew;
 
-    rmtree 't/tmp/.crystalbrew/crystal';
-    ok not -d 't/tmp/.crystalbrew/crystal';
+    ok not -e 't/tmp/.crystalbrew/crystal';
 
     $self->get_install_dir;
 
-    ok -d 't/tmp/.crystalbrew/crystal';
+    ok -e 't/tmp/.crystalbrew/crystal';
 };
 
 done_testing;
