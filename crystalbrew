@@ -138,21 +138,7 @@ sub _cmd_ls_remote {
     my @tag_names = map { $_->{tag_name} } @$releases;
     my @versions  = map { $self->normalize_version($_) } @tag_names;
 
-    my $i = 0;
-    my %tmp;
-
-    for (@versions) {
-        my ($v1, $v2, $v3) = $_ =~ m/v(\d+)\.(\d+)\.(\d+)/;
-        if (!$tmp{"$v1.$v2"}++) {
-            print "\n\n" if $i;
-            $i = 0;
-        }
-
-        print $_;
-        print ++$i % 8 == 0 ? "\n" : ' ' x (10 - length $_);
-    }
-
-    say '';
+    $self->print_remote_versions(Crystalbrew::Utils::sort_version(\@versions));
 }
 
 sub _cmd_ls_all {
@@ -225,7 +211,7 @@ sub _cmd_setup {
     say "========================================";
     say "Add path:\n";
     say "export PATH=$brew_dir/current/bin:\$PATH";
-    say "========================================";
+    say "========================================n";
 }
 
 sub _cmd_setup_dirs {
@@ -402,6 +388,26 @@ sub error_and_exit {
 
     say $msg;
     exit 1;
+}
+
+sub print_remote_versions {
+    my ($self, $versions) = @_;
+
+    my $i = 0;
+    my %tmp;
+
+    for (@$versions) {
+        my ($v1, $v2, $v3) = $_ =~ m/v(\d+)\.(\d+)\.(\d+)/;
+        if (!$tmp{"$v1.$v2"}++) {
+            print "\n\n" if $i;
+            $i = 0;
+        }
+
+        print $_;
+        print ++$i % 8 == 0 ? "\n" : ' ' x (10 - length $_);
+    }
+
+    say '';
 }
 
 sub normalize_version {
