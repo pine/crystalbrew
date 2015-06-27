@@ -42,7 +42,7 @@ $ crystalbrew help
 Please see help.
 
 ```
-$ crystalbrew --help                                                                                                       [master]
+$ crystalbrew --help
 crystalbrew 0.0.1
 
 Usage:
@@ -52,14 +52,18 @@ Usage:
     crystalbrew use <version>                Use <version>
     crystalbrew list                         List installed versions
     crystalbrew ls                           Alias for `list`
+    crystalbrew ls-remote                    List remote versions
+    crystalbrew ls-all                       List remote and installed versions
     crystalbrew alias <key> <version>        Set alias to version
     crystalbrew unalias <key>                Remove alias
     crystalbrew clean <version> | all        Remove source file
+    crystalbrew selfupdate                   Update crystalbrew
     crystalbrew exec <version> -- <command>  Execute <command> specified <version>
 
 Example:
     # install from binary
     crystalbrew install-binary v0.7.4
+
 ```
 
 ## Development
