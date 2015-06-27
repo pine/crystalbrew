@@ -62,7 +62,7 @@ Usage:
 
 Example:
     # install from binary
-    crystalbrew install-binary v0.7.4
+    crystalbrew install v0.7.4
 
 ```
 
