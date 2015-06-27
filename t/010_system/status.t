@@ -5,7 +5,7 @@ use utf8;
 use t::Util;
 
 
-do_e2e_test sub {
+do_sytem_test sub {
     my $version = 'v0.7.4';
 
     is system("./crystalbrew setup"), 0;

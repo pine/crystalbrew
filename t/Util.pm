@@ -30,7 +30,7 @@ sub setup_dirs {
     mkpath('t/tmp/.crystalbrew');
 }
 
-sub do_e2e_test {
+sub do_system_test {
     my $code = shift;
 
     require File::Path;
@@ -47,7 +47,7 @@ sub do_e2e_test {
 }
 
 our @EXPORT = (
-    qw/create_crystalbrew setup_dirs do_e2e_test/,
+    qw/create_crystalbrew setup_dirs do_system_test/,
 
     @Data::Dumper::EXPORT,
 
