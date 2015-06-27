@@ -21,7 +21,7 @@ package Crystalbrew;
 
 use File::Path qw/rmtree mkpath/;
 
-our $VERSION = '0.0.1';
+our $VERSION = '0.1.0';
 
 sub new {
     my ($class, %opt) = @_;
