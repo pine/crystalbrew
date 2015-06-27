@@ -308,11 +308,11 @@ sub find_install_version {
 
     my $version = $self->normalize_version($v);
 
-    # if ($version !~ m/v\d+\.\d+\.\d+/) {
-    #     $version = Crystalbrew::Utils::find_version(
-    #         $version, $self->get_remote_version()
-    #     );
-    # }
+    if ($version !~ m/v\d+\.\d+\.\d+/) {
+        $version = Crystalbrew::Utils::find_version(
+            $version, $self->get_remote_version()
+        );
+    }
 
     error_and_exit('version not found') unless $version;
     error_and_exit("$version is already installed")
