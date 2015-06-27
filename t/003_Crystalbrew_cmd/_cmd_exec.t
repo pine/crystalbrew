@@ -17,14 +17,21 @@ subtest basic => sub {
 
     my $called_find = 0;
     local *Crystalbrew::find_available_version = sub {
+        my ($self, $version) = @_;
         $called_find = 1;
-        ok $_[1], 'v0.7.4';
+
+        ok $version, 'v0.7.4';
+        $version;
     };
 
     my $called_system = 0;
     $system = sub {
         $called_system = 1;
+
         ok shift, 'test --flag';
+        ok
+            index($ENV{PATH}, 't/tmp/.crystalbrew/crystal/v0.7.4/bin') > -1,
+            'should include crystal path that is specialized version';
     };
 
     my $self = create_crystalbrew;
@@ -36,16 +43,3 @@ subtest basic => sub {
 };
 
 done_testing;
-
-# sub _cmd_exec {
-#     my ($self, $args) = @_;
-#
-#     my $version = $self->find_available_version(shift @$args);
-#
-#     $ENV{PATH} = $self->get_install_dir . "/$version/bin:$ENV{PATH}";
-#
-#     shift @$args if $args->[0] eq '--';
-#     my $command = join ' ', @$args;
-#
-#     system $command;
-# }
