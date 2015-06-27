@@ -43,7 +43,7 @@ Please see help.
 
 ```
 $ crystalbrew --help
-crystalbrew 0.0.1
+crystalbrew 0.1.0
 
 Usage:
     crystalbrew help                         Show this message
