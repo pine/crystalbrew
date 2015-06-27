@@ -5,3 +5,4 @@
 local/
 
 t/tmp/.crystalbrew
+t/tmp/home
