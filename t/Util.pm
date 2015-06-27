@@ -30,24 +30,8 @@ sub setup_dirs {
     mkpath('t/tmp/.crystalbrew');
 }
 
-sub do_system_test {
-    my $code = shift;
-
-    require File::Path;
-    import File::Path qw/rmtree mkpath/;
-
-    require Cwd;
-    import Cwd qw/abs_path/;
-
-    local $ENV{HOME} = abs_path('t/tmp/home');
-    rmtree($ENV{HOME});
-    mkpath($ENV{HOME});
-
-    &$code();
-}
-
 our @EXPORT = (
-    qw/create_crystalbrew setup_dirs do_system_test/,
+    qw/create_crystalbrew setup_dirs/,
 
     @Data::Dumper::EXPORT,
 
